@@ -6,9 +6,20 @@
 <title>泡泡星球</title>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#f8f6f2;--surface:#fff;--text:#2c2c2a;--muted:#8a8780;--border:rgba(0,0,0,0.08)}
+:root{
+  --bg:#f8f6f2;--surface:#fff;--text:#2c2c2a;--muted:#8a8780;
+  --border:rgba(0,0,0,0.06);--border-strong:rgba(0,0,0,0.10);
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.04);--shadow-md:0 4px 16px rgba(0,0,0,0.06);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.08);--shadow-card:0 2px 12px rgba(0,0,0,0.05);
+  --radius-sm:10px;--radius-md:16px;--radius-lg:22px;--radius-xl:28px;
+  --ease-out:cubic-bezier(.4,0,.2,1);--ease-spring:cubic-bezier(.34,1.56,.64,1);
+}
 @media(prefers-color-scheme:dark){
-  :root{--bg:#1a1a18;--surface:#262524;--text:#e8e6e2;--muted:#8a8780;--border:rgba(255,255,255,0.1)}
+  :root{--bg:#1a1a18;--surface:#262524;--text:#e8e6e2;--muted:#8a8780;
+    --border:rgba(255,255,255,0.06);--border-strong:rgba(255,255,255,0.10);
+    --shadow-sm:0 1px 3px rgba(0,0,0,0.3);--shadow-md:0 4px 16px rgba(0,0,0,0.4);
+    --shadow-lg:0 8px 32px rgba(0,0,0,0.5);--shadow-card:0 2px 12px rgba(0,0,0,0.35);
+  }
 }
 html,body{height:100%;overflow:hidden}
 body{
@@ -17,103 +28,336 @@ body{
   -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;
 }
 .app{position:relative;width:100%;max-width:480px;height:100%;overflow:hidden;background:var(--bg)}
+/* Subtle decorative ambient glow */
+.app::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 120% 80% at 50% 0%,rgba(59,109,17,0.04),transparent 60%),
+             radial-gradient(ellipse 80% 100% at 100% 100%,rgba(24,95,165,0.03),transparent 60%);
+}
+@media(prefers-color-scheme:dark){
+  .app::before{
+    background:radial-gradient(ellipse 120% 80% at 50% 0%,rgba(59,109,17,0.08),transparent 60%),
+               radial-gradient(ellipse 80% 100% at 100% 100%,rgba(24,95,165,0.06),transparent 60%);
+  }
+}
 
 .screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
 .screen.active{display:flex}
-.scroll{flex:1;overflow-y:auto;padding:20px;-webkit-overflow-scrolling:touch}
+.scroll{flex:1;overflow-y:auto;padding:16px 16px 24px;-webkit-overflow-scrolling:touch}
+.scroll::-webkit-scrollbar{width:3px}
+.scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
 /* Map */
-.planet-header{padding:20px 20px 8px;display:flex;justify-content:space-between;align-items:center}
-.planet-header h1{font-size:20px;font-weight:700}
-.res-bar{display:flex;gap:16px;align-items:center}
-.res-item{display:flex;align-items:center;gap:5px;font-size:14px;font-weight:600}
-.res-icon{font-size:18px}
-.planets-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 20px 20px}
-.planet-card{border-radius:16px;padding:14px;border:1px solid var(--border);background:var(--surface);cursor:pointer;position:relative;overflow:hidden;transition:transform .15s}
-.planet-card:active{transform:scale(.97)}
-.planet-card.locked{opacity:.4;pointer-events:none}
-.planet-card.locked::after{content:'🔒';position:absolute;top:10px;right:14px;font-size:16px}
-.planet-name{font-size:15px;font-weight:600;margin-bottom:3px}
-.planet-desc{font-size:11px;color:var(--muted);margin-bottom:8px}
-.progress-bar{height:4px;border-radius:2px;background:var(--border);overflow:hidden;margin-top:8px}
-.progress-fill{height:100%;border-radius:2px;transition:width .3s}
-.planet-stats{font-size:10px;color:var(--muted);margin-top:4px}
+.planet-header{
+  padding:18px 16px 12px;
+  display:flex;justify-content:space-between;align-items:center;
+  background:linear-gradient(to bottom,rgba(255,255,255,0.95),rgba(255,255,255,0.5));
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);
+}
+@media(prefers-color-scheme:dark){
+  .planet-header{background:linear-gradient(to bottom,rgba(38,37,36,0.95),rgba(38,37,36,0.5))}
+}
+.planet-header h1{font-size:20px;font-weight:700;letter-spacing:-.01em}
+.res-bar{display:flex;gap:12px;align-items:center}
+.res-item{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;background:rgba(128,128,128,0.08);padding:5px 12px;border-radius:20px}
+.res-icon{font-size:16px}
+.planets-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;
+  padding:16px 16px 12px;
+}
+.planet-card{
+  border-radius:var(--radius-md);padding:16px;
+  border:1px solid var(--border);background:var(--surface);
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:transform .18s var(--ease-out),box-shadow .25s var(--ease-out);
+  box-shadow:var(--shadow-card);
+}
+.planet-card:active{transform:scale(.97);box-shadow:var(--shadow-sm)}
+.planet-card.locked{opacity:.45;pointer-events:none;box-shadow:none}
+.planet-card.locked::after{content:'🔒';position:absolute;top:12px;right:14px;font-size:16px;opacity:.7}
+.planet-name{font-size:15px;font-weight:600;margin-bottom:2px;letter-spacing:-.01em}
+.planet-desc{font-size:11px;color:var(--muted);margin-bottom:10px}
+.progress-bar{height:5px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:10px}
+.progress-fill{height:100%;border-radius:3px;transition:width .4s var(--ease-out)}
+.planet-stats{font-size:10px;color:var(--muted);margin-top:5px;letter-spacing:.02em}
 
-.level-list{margin-top:20px;background:var(--surface);border-radius:16px;padding:16px;border:1px solid var(--border)}
-.level-list h3{font-size:15px;font-weight:600;margin-bottom:12px}
-.level-grid{display:flex;flex-wrap:wrap;gap:8px}
-.level-node{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);position:relative;transition:transform .12s}
-.level-node:active{transform:scale(.85)}
-.level-node.done{background:#EAF3DE;border-color:#C0DD97;color:#3B6D11}
-.level-node.current{background:#E6F1FB;border-color:#B5D4F4;color:#185FA5;border-width:2px}
+.level-list{margin-top:16px;background:var(--surface);border-radius:var(--radius-lg);padding:20px;border:1px solid var(--border);box-shadow:var(--shadow-card)}
+.level-list h3{font-size:15px;font-weight:600;margin-bottom:14px;letter-spacing:-.01em}
+.level-grid{display:flex;flex-wrap:wrap;gap:10px}
+.level-node{
+  width:44px;height:44px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;cursor:pointer;
+  border:1.5px solid var(--border);background:var(--surface);
+  position:relative;
+  transition:transform .15s var(--ease-spring),box-shadow .2s var(--ease-out);
+}
+.level-node:active{transform:scale(.82)}
+.level-node.done{background:#EAF3DE;border-color:#C0DD97;color:#3B6D11;box-shadow:0 1px 4px rgba(59,109,17,0.12)}
+.level-node.current{background:#E6F1FB;border-color:#B5D4F4;color:#185FA5;border-width:2px;box-shadow:0 1px 6px rgba(24,95,165,0.15)}
 .level-node.locked{opacity:.3;pointer-events:none;border-style:dashed}
-.star-marks{position:absolute;bottom:1px;font-size:7px;letter-spacing:-1px}
+.star-marks{position:absolute;bottom:-1px;font-size:7px;letter-spacing:-1px}
 
-.btn{font-size:13px;font-weight:600;padding:10px 22px;border-radius:22px;cursor:pointer;border:none;transition:transform .12s}
+.btn{
+  font-size:13px;font-weight:600;padding:10px 24px;border-radius:24px;
+  cursor:pointer;border:none;
+  transition:transform .15s var(--ease-spring),box-shadow .2s var(--ease-out);
+}
 .btn:active{transform:scale(.95)}
-.btn-primary{background:#3B6D11;color:#fff}
-.btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}
-.back-btn{font-size:13px;font-weight:600;padding:8px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);cursor:pointer;transition:transform .12s}
+.btn-primary{background:#3B6D11;color:#fff;box-shadow:0 2px 8px rgba(59,109,17,0.25)}
+.btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.back-btn{
+  font-size:12px;font-weight:600;padding:7px 16px;border-radius:20px;
+  background:var(--surface);border:1px solid var(--border);
+  cursor:pointer;
+  transition:transform .15s var(--ease-spring),box-shadow .2s var(--ease-out);
+  box-shadow:var(--shadow-sm);
+}
 .back-btn:active{transform:scale(.95)}
 
-/* Game */
+/* Game HUD - glass morphism bar */
+.game-hud{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  padding:8px 8px;
+  /* Safe area for notch phones */
+  padding-top:max(8px, env(safe-area-inset-top, 0px));
+  display:flex;align-items:center;gap:5px;
+  pointer-events:none;
+}
+/* Glass background bar behind HUD items */
+.game-hud::before{
+  content:'';position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(to bottom, rgba(248,246,242,0.88) 0%, rgba(248,246,242,0.75) 70%, rgba(248,246,242,0) 100%);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  pointer-events:none;
+}
+@media(prefers-color-scheme:dark){
+  .game-hud::before{
+    background:linear-gradient(to bottom, rgba(26,26,24,0.9) 0%, rgba(26,26,24,0.78) 70%, rgba(26,26,24,0) 100%);
+  }
+}
+/* Fixed-width status pills — score / pops / lives */
+.hud-box{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:48px;height:44px;padding:2px 4px;border-radius:10px;
+  flex-shrink:0;
+  background:rgba(255,255,255,0.35);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  border:1px solid rgba(255,255,255,0.3);
+}
+@media(prefers-color-scheme:dark){
+  .hud-box{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.08)}
+}
+/* Lives box — wider to fit 3 hearts */
+.hud-box-lives{width:56px}
+.hud-label{
+  font-size:7.5px;font-weight:500;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.04em;line-height:1;margin-bottom:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
+}
+/* Number value — use vw-responsive sizing so large numbers scale down */
+.hud-val{
+  font-size:15px;font-weight:700;line-height:1.05;letter-spacing:-.03em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
+}
+/* Goal bar — center flex, protected with min-width */
+.goal-bar{
+  flex:1 1 0;min-width:70px;text-align:center;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  height:44px;padding:4px 10px;border-radius:12px;
+  background:rgba(255,255,255,0.35);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  border:1px solid rgba(255,255,255,0.3);
+}
+@media(prefers-color-scheme:dark){
+  .goal-bar{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.08)}
+}
+.goal-text{
+  font-size:10px;font-weight:600;color:var(--muted);
+  line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%
+}
+.goal-progress{width:100%;height:5px;border-radius:3px;background:var(--border);overflow:hidden}
+.goal-fill{height:100%;border-radius:3px;transition:width .4s var(--ease-out)}
+/* Sub-goal tags below the progress bar */
+.goal-subs{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:2px}
+.hud-stag{
+  font-size:8px;font-weight:500;padding:1px 6px;border-radius:8px;
+  background:rgba(128,128,128,0.1);color:var(--muted);
+  white-space:nowrap;
+}
+.hud-stag.met{background:rgba(99,153,34,0.15);color:#4a7a12}
+
 #gameCanvas{display:block;width:100%;height:100%;touch-action:none;cursor:pointer}
-.game-hud{position:absolute;top:0;left:0;right:0;z-index:10;padding:14px 16px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
-.hud-box{display:flex;flex-direction:column;gap:4px}
-.hud-label{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-.hud-val{font-size:24px;font-weight:700;line-height:1}
-.goal-bar{position:absolute;top:14px;left:50%;transform:translateX(-50%);max-width:200px;text-align:center;pointer-events:none}
-.goal-text{font-size:11px;font-weight:600;color:var(--muted);line-height:1.4}
-.goal-progress{width:100%;height:3px;border-radius:2px;background:var(--border);margin-top:4px;overflow:hidden}
-.goal-fill{height:100%;border-radius:2px;transition:width .3s}
 
-.score-pop{position:absolute;font-size:15px;font-weight:700;color:#ba7517;pointer-events:none;z-index:20;animation:popUp .6s ease-out forwards;white-space:nowrap}
-@keyframes popUp{0%{opacity:1;transform:translateY(0) scale(1)}60%{opacity:1;transform:translateY(-28px) scale(1.2)}100%{opacity:0;transform:translateY(-48px) scale(.8)}}
+.score-pop{position:absolute;font-size:16px;font-weight:700;color:#ba7517;pointer-events:none;z-index:20;animation:popUp .7s ease-out forwards;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.1)}
+@keyframes popUp{0%{opacity:1;transform:translateY(0) scale(1)}50%{opacity:1;transform:translateY(-22px) scale(1.2)}100%{opacity:0;transform:translateY(-52px) scale(.7)}}
 
-.combo-tag{position:absolute;bottom:22%;left:50%;transform:translateX(-50%);font-size:18px;font-weight:700;pointer-events:none;z-index:15;opacity:0;transition:opacity .25s}
+.combo-tag{
+  position:absolute;bottom:24%;left:50%;transform:translateX(-50%);
+  font-size:20px;font-weight:800;pointer-events:none;z-index:15;
+  opacity:0;transition:opacity .25s var(--ease-out);
+  text-shadow:0 2px 8px rgba(0,0,0,0.12);
+}
 .combo-tag.on{opacity:1}
-.tap-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:15px;font-weight:500;color:var(--muted);pointer-events:none;z-index:12;opacity:1;transition:opacity .5s;text-align:center;line-height:1.6}
+.tap-hint{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:15px;font-weight:500;color:var(--muted);pointer-events:none;z-index:12;
+  opacity:1;transition:opacity .5s var(--ease-out);text-align:center;line-height:1.6;
+}
 .tap-hint.fade{opacity:0}
 
-.game-pause{position:absolute;top:14px;right:16px;z-index:20;width:36px;height:36px;border-radius:50%;background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
-.mute-btn{position:absolute;bottom:20px;right:16px;z-index:20;width:40px;height:40px;border-radius:50%;background:var(--surface);border:1px solid var(--border);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.game-pause{
+  flex-shrink:0;
+  width:36px;height:44px;border-radius:10px;
+  background:rgba(255,255,255,0.45);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  border:1px solid rgba(255,255,255,0.3);
+  cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:auto;z-index:20;
+  box-shadow:var(--shadow-sm);
+  transition:transform .15s var(--ease-spring),box-shadow .2s var(--ease-out);
+}
+@media(prefers-color-scheme:dark){
+  .game-pause{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.1)}
+}
+.game-pause:active{transform:scale(.88)}
+.mute-btn{
+  position:absolute;bottom:24px;right:16px;z-index:20;
+  width:44px;height:44px;border-radius:50%;
+  background:rgba(255,255,255,0.5);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.3);
+  cursor:pointer;font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--shadow-md);
+  transition:transform .15s var(--ease-spring),box-shadow .2s var(--ease-out);
+}
+@media(prefers-color-scheme:dark){
+  .mute-btn{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.1)}
+}
+.mute-btn:active{transform:scale(.9)}
 
-.pause-modal{position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
-.pause-modal::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.3)}
+.pause-modal{position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s var(--ease-out)}
+.pause-modal::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .pause-modal.on{opacity:1;pointer-events:auto}
-.pause-card{position:relative;background:var(--surface);border-radius:20px;padding:24px;width:240px;text-align:center;animation:settleIn .3s ease-out}
-.pause-card h3{font-size:16px;font-weight:700;margin-bottom:16px}
-.pause-card .btn{margin:4px 0;width:100%}
+.pause-card{
+  position:relative;background:var(--surface);border-radius:var(--radius-lg);
+  padding:28px;width:260px;text-align:center;
+  animation:settleIn .35s var(--ease-spring);
+  box-shadow:var(--shadow-lg);
+}
+.pause-card h3{font-size:18px;font-weight:700;margin-bottom:20px;letter-spacing:-.01em}
+.pause-card .btn{margin:5px 0;width:100%}
 
-.settle-overlay{position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .4s}
-.settle-overlay::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.35)}
+.settle-overlay{position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .4s var(--ease-out)}
+.settle-overlay::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .settle-overlay.on{opacity:1;pointer-events:auto}
-.settle-card{position:relative;background:var(--surface);border-radius:24px;padding:24px;width:calc(100% - 48px);max-width:360px;text-align:center;animation:settleIn .5s ease-out}
-@keyframes settleIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
-.settle-stars{font-size:42px;letter-spacing:4px;margin-bottom:8px}
-.settle-title{font-size:20px;font-weight:700;margin-bottom:4px}
-.settle-sub{font-size:13px;color:var(--muted);margin-bottom:18px}
-.settle-stats{display:flex;justify-content:center;gap:24px;margin-bottom:20px}
+.settle-card{
+  position:relative;background:var(--surface);border-radius:var(--radius-xl);
+  padding:28px 24px;width:calc(100% - 40px);max-width:360px;text-align:center;
+  animation:settleIn .5s var(--ease-spring);
+  box-shadow:var(--shadow-lg);
+}
+@keyframes settleIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.settle-stars{font-size:44px;letter-spacing:4px;margin-bottom:10px}
+.settle-title{font-size:21px;font-weight:700;margin-bottom:4px;letter-spacing:-.01em}
+.settle-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.settle-stats{display:flex;justify-content:center;gap:28px;margin-bottom:22px}
 .settle-stat{text-align:center}
-.settle-stat .val{font-size:22px;font-weight:700}
-.settle-stat .lbl{font-size:10px;color:var(--muted)}
+.settle-stat .val{font-size:23px;font-weight:700;letter-spacing:-.01em}
+.settle-stat .lbl{font-size:10px;color:var(--muted);margin-top:2px}
 .settle-btns{display:flex;gap:10px;justify-content:center}
 
 /* Shop */
-.shop-header{padding:16px 20px 4px;display:flex;justify-content:space-between;align-items:center}
-.shop-header h2{font-size:18px;font-weight:700}
-.shop-tabs{display:flex;gap:6px;padding:12px 20px}
-.shop-tab{font-size:12px;font-weight:600;padding:6px 16px;border-radius:16px;border:1px solid var(--border);background:var(--surface);cursor:pointer}
-.shop-tab.active{background:var(--text);color:var(--bg);border-color:var(--text)}
-.shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px 24px}
-.shop-item{border-radius:14px;padding:12px;border:1px solid var(--border);background:var(--surface);text-align:center}
-.shop-item.owned{border-color:#C0DD97;background:#EAF3DE}
-.shop-preview{width:56px;height:56px;border-radius:50%;margin:0 auto 8px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px}
-.shop-name{font-size:13px;font-weight:600;margin-bottom:4px}
+.shop-header{
+  padding:18px 16px 8px;
+  display:flex;justify-content:space-between;align-items:center;
+  background:linear-gradient(to bottom,rgba(255,255,255,0.95),rgba(255,255,255,0.5));
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);
+}
+@media(prefers-color-scheme:dark){
+  .shop-header{background:linear-gradient(to bottom,rgba(38,37,36,0.95),rgba(38,37,36,0.5))}
+}
+.shop-header h2{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.shop-tabs{display:flex;gap:6px;padding:14px 16px}
+.shop-tab{
+  font-size:12px;font-weight:600;padding:8px 18px;border-radius:20px;
+  border:1.5px solid var(--border);background:var(--surface);
+  cursor:pointer;
+  transition:all .2s var(--ease-out);
+}
+.shop-tab.active{background:var(--text);color:var(--bg);border-color:var(--text);box-shadow:var(--shadow-md)}
+.shop-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+  padding:0 16px 24px;
+}
+.shop-item{
+  border-radius:var(--radius-md);padding:14px;
+  border:1px solid var(--border);background:var(--surface);
+  text-align:center;
+  box-shadow:var(--shadow-card);
+  transition:transform .15s var(--ease-out),box-shadow .2s var(--ease-out);
+}
+.shop-item:active{transform:scale(.97)}
+.shop-item.owned{border-color:rgba(192,221,151,0.5);background:#f6faf0;box-shadow:0 1px 6px rgba(192,221,151,0.2)}
+@media(prefers-color-scheme:dark){
+  .shop-item.owned{background:#1d2a14}
+}
+.shop-preview{
+  width:60px;height:60px;border-radius:50%;
+  margin:0 auto 10px;
+  border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+  box-shadow:var(--shadow-sm);
+}
+.shop-name{font-size:13px;font-weight:600;margin-bottom:4px;letter-spacing:-.01em}
 .shop-price{font-size:11px;color:var(--muted)}
 .shop-item.owned .shop-price{color:#3B6D11;font-weight:600}
-.shop-buy{margin-top:6px;font-size:11px;font-weight:600;padding:4px 14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer}
+.shop-buy{
+  margin-top:8px;font-size:11px;font-weight:600;padding:5px 16px;border-radius:14px;
+  border:1.5px solid var(--border);background:var(--surface);
+  cursor:pointer;
+  transition:all .15s var(--ease-out);
+}
 .shop-item.owned .shop-buy{background:#639922;border-color:#639922;color:#fff;pointer-events:none}
+
+/* Rules card on map */
+.rules-card{
+  margin:12px 0 24px;
+  background:var(--surface);border-radius:var(--radius-lg);
+  border:1px solid var(--border);box-shadow:var(--shadow-card);
+  overflow:hidden;
+}
+.rules-toggle{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 16px;cursor:pointer;
+  font-size:14px;font-weight:600;
+  transition:background .15s var(--ease-out);
+  user-select:none;
+}
+.rules-toggle:hover{background:rgba(128,128,128,0.04)}
+.rules-arrow{font-size:12px;color:var(--muted);transition:transform .25s var(--ease-out)}
+.rules-arrow.open{transform:rotate(180deg)}
+.rules-body{
+  max-height:0;overflow:hidden;
+  transition:max-height .35s var(--ease-out);
+}
+.rules-body.open{max-height:500px}
+.rules-row{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:8px 16px;font-size:12px;line-height:1.7;color:var(--muted);
+  border-top:1px solid var(--border);
+}
+.rules-row span{flex-shrink:0;font-size:14px;padding-top:1px}
+.rules-row:last-child{padding-bottom:14px}
 </style>
 </head>
 <body>
@@ -126,20 +370,32 @@ body{
         <button class="back-btn" id="shopBtn">🛍 装扮</button>
       </div>
     </div>
-    <div class="scroll"><div class="planets-grid" id="planetsGrid"></div><div id="levelList"></div></div>
+    <div class="scroll"><div class="planets-grid" id="planetsGrid"></div><div id="levelList"></div>
+    <div class="rules-card" id="rulesCard">
+      <div class="rules-toggle" id="rulesToggle"><span>📖 玩法规则</span><span class="rules-arrow" id="rulesArrow">▾</span></div>
+      <div class="rules-body" id="rulesBody">
+        <div class="rules-row"><span>🫧</span><div>点击泡泡即可戳爆得分，戳够目标数通关</div></div>
+        <div class="rules-row"><span>⚡</span><div>连续戳泡触发连击，<b>2秒</b>内连戳累加倍率</div></div>
+        <div class="rules-row"><span>⭐</span><div>每达成一个关卡目标得 <b>1</b> 颗星，全目标达成=完美通关</div></div>
+        <div class="rules-row"><span>🛍</span><div>每颗游玩星 = <b>×5</b> 商店奖励星，用于购买装扮</div></div>
+        <div class="rules-row"><span>🎵</span><div>音乐泡戳爆有音效，部分关卡需求收集音乐泡</div></div>
+        <div class="rules-row"><span>⚠️</span><div>第4关起出现陷阱泡！戳到扣命，<b>3命耗尽=失败</b></div></div>
+        <div class="rules-row"><span>🛡</span><div>别碰陷阱泡是额外目标，不挡通关只影响星级</div></div>
+      </div>
+    </div></div>
   </div>
 
   <div class="screen" id="gameScreen">
     <canvas id="gameCanvas"></canvas>
     <div class="game-hud">
-      <div class="hud-box"><span class="hud-label">分数</span><span class="hud-val" id="hudScore">0</span></div>
-      <div class="goal-bar"><div class="goal-text" id="goalText"></div><div class="goal-progress"><div class="goal-fill" id="goalFill" style="width:0%"></div></div></div>
-      <div class="hud-box"><span class="hud-label">泡泡</span><span class="hud-val" id="hudPops">0</span></div>
-      <div class="hud-box" style="text-align:center"><span class="hud-label" id="livesLabel" style="font-size:11px">💀 陷阱</span><span class="hud-val" id="hudLives" style="font-size:20px;letter-spacing:2px">❤️❤️❤️</span></div>
+      <div class="hud-box"><span class="hud-label">⭐ 分数</span><span class="hud-val" id="hudScore">0</span></div>
+      <div class="goal-bar"><div class="goal-text" id="goalText">戳爆 15 个泡泡</div><div class="goal-progress"><div class="goal-fill" id="goalFill" style="width:0%"></div></div><div class="goal-subs" id="goalSubs"></div></div>
+      <div class="hud-box"><span class="hud-label">🫧 已戳</span><span class="hud-val" id="hudPops">0</span></div>
+      <div class="hud-box hud-box-lives" id="hudLivesBox"><span class="hud-val" id="hudLives" style="font-size:13px;letter-spacing:0">❤️❤️❤️</span></div>
+      <button class="game-pause" id="pauseBtn">⏸</button>
     </div>
     <div class="combo-tag" id="comboTag"></div>
     <div class="tap-hint" id="tapHint">戳一戳试试<br><span style="font-size:24px;display:block;margin-top:4px">🫧</span></div>
-    <button class="game-pause" id="pauseBtn">⏸</button>
     <button class="mute-btn" id="muteBtn">🔊</button>
     <div class="pause-modal" id="pauseModal"><div class="pause-card"><h3>暂停</h3><button class="btn btn-primary" id="resumeBtn">继续游戏</button><button class="btn btn-secondary" id="quitBtn">返回主菜单</button></div></div>
     <div class="settle-overlay" id="settleOverlay"><div class="settle-card" id="settleCard"></div></div>
@@ -149,7 +405,7 @@ body{
     <div class="shop-header"><h2>装扮商店</h2><div class="res-item"><span class="res-icon">⭐</span><span id="shopStars">0</span></div></div>
     <div class="shop-tabs" id="shopTabs"></div>
     <div class="scroll"><div class="shop-grid" id="shopGrid"></div></div>
-    <div class="shop-header" style="padding-top:0"><button class="back-btn" id="shopBackBtn">← 返回</button></div>
+    <div class="shop-header" style="padding:0 16px 16px;border-bottom:none;background:transparent"><button class="back-btn" id="shopBackBtn">← 返回</button></div>
   </div>
 </div>
 <script>
@@ -187,6 +443,213 @@ body{
     if(typeof p.unlock==='number') return (state.planetP[p.uPlanet||p.id]||0)>=p.unlock;
     if(p.unlock==='three'){ var d=0; for(var i=0;i<PLANETS.length;i++){ if(PLANETS[i].id!==p.id&&(state.planetP[PLANETS[i].id]||0)>=PLANETS[i].n)d++; } return d>=3; }
     return false;
+  }
+
+  // === PLANET THEMES ===
+  var PLANET_THEMES = {
+    forest:{
+      name:'森林', icon:'🌳',
+      grad:['#e8f5e0','#c8e6c9'],
+      colors:[
+        {f:'rgba(59,109,17,0.20)',s:'rgba(59,109,17,0.50)',h:'rgba(255,255,255,0.45)'},
+        {f:'rgba(99,153,34,0.18)',s:'rgba(76,175,80,0.50)',h:'rgba(255,255,255,0.42)'},
+        {f:'rgba(139,195,74,0.18)',s:'rgba(59,109,17,0.45)',h:'rgba(255,255,255,0.42)'},
+        {f:'rgba(165,214,63,0.16)',s:'rgba(104,159,56,0.42)',h:'rgba(255,255,255,0.38)'}
+      ],
+      prints:['🍃','🌿','🍀','🦌','🐿️','🌱']
+    },
+    ocean:{
+      name:'海洋', icon:'🌊',
+      grad:['#e0f0fb','#c8dff5'],
+      colors:[
+        {f:'rgba(24,95,165,0.18)',s:'rgba(24,95,165,0.50)',h:'rgba(255,255,255,0.45)'},
+        {f:'rgba(41,128,185,0.18)',s:'rgba(52,152,219,0.50)',h:'rgba(255,255,255,0.42)'},
+        {f:'rgba(72,158,204,0.18)',s:'rgba(24,95,165,0.45)',h:'rgba(255,255,255,0.42)'},
+        {f:'rgba(133,193,233,0.16)',s:'rgba(41,128,185,0.42)',h:'rgba(255,255,255,0.38)'}
+      ],
+      prints:['🐚','🐠','🐟','🦀','🐙','🫧']
+    },
+    space:{
+      name:'宇宙', icon:'🚀',
+      grad:['#e8e6f8','#d4d0f0'],
+      colors:[
+        {f:'rgba(60,52,137,0.18)',s:'rgba(60,52,137,0.50)',h:'rgba(255,255,255,0.45)'},
+        {f:'rgba(86,67,178,0.16)',s:'rgba(86,67,178,0.48)',h:'rgba(255,255,255,0.42)'},
+        {f:'rgba(127,119,221,0.16)',s:'rgba(60,52,137,0.42)',h:'rgba(255,255,255,0.42)'},
+        {f:'rgba(149,117,205,0.14)',s:'rgba(86,67,178,0.40)',h:'rgba(255,255,255,0.38)'}
+      ],
+      prints:['⭐','✨','🌙','🪐','☄️','💫']
+    },
+    garden:{
+      name:'花园', icon:'🌺',
+      grad:['#fce4ec','#f8bbd0'],
+      colors:[
+        {f:'rgba(153,53,86,0.18)',s:'rgba(153,53,86,0.48)',h:'rgba(255,255,255,0.45)'},
+        {f:'rgba(194,24,91,0.18)',s:'rgba(194,24,91,0.46)',h:'rgba(255,255,255,0.42)'},
+        {f:'rgba(233,30,99,0.16)',s:'rgba(153,53,86,0.42)',h:'rgba(255,255,255,0.42)'},
+        {f:'rgba(245,87,143,0.16)',s:'rgba(194,24,91,0.40)',h:'rgba(255,255,255,0.38)'}
+      ],
+      prints:['🌸','🌺','🌻','🦋','🌷','💮']
+    },
+    dream:{
+      name:'梦境', icon:'🌙',
+      grad:['#f3e5f5','#e1bee7'],
+      colors:[
+        {f:'rgba(133,79,11,0.16)',s:'rgba(133,79,11,0.45)',h:'rgba(255,255,255,0.45)'},
+        {f:'rgba(171,71,188,0.16)',s:'rgba(171,71,188,0.45)',h:'rgba(255,255,255,0.42)'},
+        {f:'rgba(206,147,216,0.16)',s:'rgba(133,79,11,0.40)',h:'rgba(255,255,255,0.42)'},
+        {f:'rgba(126,87,194,0.14)',s:'rgba(171,71,188,0.38)',h:'rgba(255,255,255,0.38)'}
+      ],
+      prints:['💎','🔮','☁️','🌙','✨','💤']
+    }
+  };
+
+  function planetTheme(pid){ return PLANET_THEMES[pid] || null; }
+
+  // === CARD BACKGROUND SVGs (realistic) ===
+  function cardBgCss(pid){
+    var svgs = {
+      forest: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260">'+
+        '<defs><linearGradient id="fs" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7CB342"/><stop offset="30%" stop-color="#558B2F"/><stop offset="70%" stop-color="#33691E"/><stop offset="100%" stop-color="#1B5E20"/></linearGradient>'+
+        '<radialGradient id="sunf" cx="0.85" cy="0.2" r="0.3"><stop offset="0%" stop-color="#FFF9C4" stop-opacity="0.7"/><stop offset="100%" stop-color="#FFF9C4" stop-opacity="0"/></radialGradient></defs>'+
+        '<rect width="400" height="260" fill="url(#fs)"/>'+
+        '<rect width="400" height="260" fill="url(#sunf)"/>'+
+        '<polygon points="30,160 60,50 90,160" fill="#1B5E20" opacity="0.6"/><polygon points="70,160 105,35 140,160" fill="#2E7D32" opacity="0.55"/><polygon points="120,160 155,45 190,160" fill="#1B5E20" opacity="0.5"/>'+
+        '<polygon points="180,160 210,40 240,160" fill="#2E7D32" opacity="0.45"/><polygon points="240,160 275,55 310,160" fill="#1B5E20" opacity="0.4"/><polygon points="310,160 340,48 370,160" fill="#2E7D32" opacity="0.35"/>'+
+        '<polygon points="20,220 55,110 90,220" fill="#388E3C"/><polygon points="80,225 120,100 160,225" fill="#43A047"/>'+
+        '<polygon points="160,220 200,105 240,220" fill="#4CAF50"/><polygon points="250,225 290,115 330,225" fill="#388E3C"/>'+
+        '<polygon points="330,220 360,108 390,220" fill="#43A047"/>'+
+        '<ellipse cx="200" cy="248" rx="250" ry="30" fill="#1B5E20"/><ellipse cx="200" cy="258" rx="240" ry="20" fill="#2E7D32"/>'+
+        '<g transform="translate(170,208)"><ellipse cx="0" cy="0" rx="10" ry="7" fill="#4E342E" opacity="0.75"/><circle cx="-11" cy="-10" r="3.5" fill="#4E342E" opacity="0.75"/>'+
+        '<line x1="-9" y1="-12" x2="-13" y2="-19" stroke="#4E342E" stroke-width="1.5" opacity="0.75"/><line x1="-9" y1="-12" x2="-5" y2="-19" stroke="#4E342E" stroke-width="1.5" opacity="0.75"/>'+
+        '<line x1="8" y1="-3" x2="14" y2="-12" stroke="#4E342E" stroke-width="1.2" opacity="0.75"/><line x1="-10" y1="6" x2="-10" y2="14" stroke="#4E342E" stroke-width="2" opacity="0.75"/>'+
+        '<line x1="6" y1="6" x2="6" y2="14" stroke="#4E342E" stroke-width="2" opacity="0.75"/></g>'+
+        '<g transform="translate(290,205)"><ellipse cx="0" cy="0" rx="7" ry="5" fill="#4E342E" opacity="0.55"/><circle cx="-7" cy="-7" r="2.5" fill="#4E342E" opacity="0.55"/>'+
+        '<line x1="-6" y1="-9" x2="-9" y2="-14" stroke="#4E342E" stroke-width="1" opacity="0.55"/></g>'+
+        '<path d="M60,40 Q70,28 80,40" fill="none" stroke="#333" stroke-width="1.5" opacity="0.5"/>'+
+        '<path d="M240,45 Q250,33 260,45" fill="none" stroke="#333" stroke-width="1.5" opacity="0.4"/>'+
+        '<g stroke="#81C784" stroke-width="1.5" opacity="0.6"><line x1="15" y1="245" x2="13" y2="232"/><line x1="120" y1="248" x2="123" y2="233"/>'+
+        '<line x1="215" y1="246" x2="213" y2="232"/><line x1="350" y1="248" x2="353" y2="234"/></g>'+
+        '<circle cx="55" cy="40" r="2" fill="#4E342E" opacity="0.5"/><circle cx="248" cy="38" r="1.5" fill="#4E342E" opacity="0.4"/></svg>',
+
+      ocean: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260">'+
+        '<defs><linearGradient id="os" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#29B6F6"/><stop offset="40%" stop-color="#0288D1"/><stop offset="100%" stop-color="#01579B"/></linearGradient>'+
+        '<radialGradient id="osun" cx="0.5" cy="0.15" r="0.25"><stop offset="0%" stop-color="#FFF9C4" stop-opacity="0.5"/><stop offset="100%" stop-color="#FFF9C4" stop-opacity="0"/></radialGradient></defs>'+
+        '<rect width="400" height="260" fill="url(#os)"/><rect width="400" height="260" fill="url(#osun)"/>'+
+        '<path d="M0,110 Q50,90 100,110 Q150,130 200,110 Q250,90 300,110 Q350,130 400,110" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>'+
+        '<path d="M0,130 Q50,110 100,130 Q150,150 200,130 Q250,110 300,130 Q350,150 400,130" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="2.5"/>'+
+        '<path d="M0,150 Q60,135 120,150 Q180,165 240,150 Q300,135 360,150 L400,150" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>'+
+        '<path d="M0,170 Q40,158 80,170 Q120,182 160,170 Q200,158 240,170 Q280,182 320,170 Q360,158 400,170" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>'+
+        '<g transform="translate(70,158)" fill="#FF8A65"><ellipse cx="0" cy="0" rx="14" ry="5.5"/>'+
+        '<polygon points="-14,-7 -23,0 -14,7"/><circle cx="9" cy="-1.5" r="1.5" fill="#333"/>'+
+        '<circle cx="-3" cy="2" r="0.8" fill="#FFCCBC"/></g>'+
+        '<g transform="translate(290,145) scale(-1,1)" fill="#4DD0E1"><ellipse cx="0" cy="0" rx="11" ry="4.5"/>'+
+        '<polygon points="-11,-6 -18,0 -11,6"/><circle cx="7" cy="-1.5" r="1.2" fill="#333"/></g>'+
+        '<g transform="translate(190,168)" fill="#FFD54F"><ellipse cx="0" cy="0" rx="9" ry="3.5"/>'+
+        '<polygon points="-9,-4 -14,0 -9,4"/><circle cx="5" cy="-1" r="1" fill="#333"/></g>'+
+        '<g transform="translate(35,170)" fill="#80DEEA" opacity="0.7"><ellipse cx="0" cy="0" rx="6" ry="2.5"/>'+
+        '<polygon points="-6,-3 -10,0 -6,3"/><circle cx="3" cy="-0.8" r="0.8" fill="#333"/></g>'+
+        '<g transform="translate(320,165)" fill="#FFAB91" opacity="0.6"><ellipse cx="0" cy="0" rx="7" ry="3"/>'+
+        '<polygon points="-7,-4 -11,0 -7,4"/><circle cx="4" cy="-1" r="0.8" fill="#333"/></g>'+
+        '<g transform="translate(55,248)"><path d="M0,0 Q-3,-18 0,-35 Q3,-52 0,-68" fill="none" stroke="#66BB6A" stroke-width="3.5" stroke-linecap="round"/>'+
+        '<path d="M18,5 Q21,-10 14,-30 Q8,-45 12,-58" fill="none" stroke="#81C784" stroke-width="2.5" stroke-linecap="round"/></g>'+
+        '<g transform="translate(350,250)"><path d="M0,0 Q4,-14 1,-30 Q-2,-44 0,-62" fill="none" stroke="#FF7043" stroke-width="4" stroke-linecap="round"/>'+
+        '<path d="M-8,-22 Q-13,-15 -6,-10" fill="none" stroke="#FF8A65" stroke-width="2.5" stroke-linecap="round"/>'+
+        '<path d="M10,-18 Q14,-13 8,-9" fill="none" stroke="#FF8A65" stroke-width="2.5" stroke-linecap="round"/></g>'+
+        '<circle cx="65" cy="120" r="4" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>'+
+        '<circle cx="310" cy="110" r="3" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>'+
+        '<circle cx="195" cy="100" r="5" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>'+
+        '<circle cx="140" cy="125" r="2" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>'+
+        '<circle cx="340" cy="130" r="3.5" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>'+
+        '<circle cx="100" cy="105" r="2.5" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="0.8"/></svg>',
+
+      space: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260">'+
+        '<defs><linearGradient id="ss" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0D0221"/><stop offset="40%" stop-color="#150940"/><stop offset="100%" stop-color="#2D1B69"/></linearGradient>'+
+        '<radialGradient id="neb1" cx="0.2" cy="0.3" r="0.4"><stop offset="0%" stop-color="#7C4DFF" stop-opacity="0.3"/><stop offset="100%" stop-color="#7C4DFF" stop-opacity="0"/></radialGradient>'+
+        '<radialGradient id="neb2" cx="0.8" cy="0.65" r="0.3"><stop offset="0%" stop-color="#E040FB" stop-opacity="0.2"/><stop offset="100%" stop-color="#E040FB" stop-opacity="0"/></radialGradient>'+
+        '<radialGradient id="planetG" cx="0.3" cy="0.3" r="0.7"><stop offset="0%" stop-color="#FF8A65"/><stop offset="40%" stop-color="#D84315"/><stop offset="100%" stop-color="#3E2723"/></radialGradient></defs>'+
+        '<rect width="400" height="260" fill="url(#ss)"/>'+
+        '<rect width="400" height="260" fill="url(#neb1)"/><rect width="400" height="260" fill="url(#neb2)"/>'+
+        '<g fill="white">'+
+        '<circle cx="30" cy="30" r="1.5" opacity="0.9"/><circle cx="85" cy="18" r="1" opacity="0.6"/><circle cx="150" cy="55" r="1.8" opacity="0.8"/>'+
+        '<circle cx="220" cy="25" r="1" opacity="0.5"/><circle cx="310" cy="40" r="1.2" opacity="0.7"/><circle cx="370" cy="22" r="1.5" opacity="0.8"/>'+
+        '<circle cx="45" cy="80" r="0.8" opacity="0.5"/><circle cx="120" cy="100" r="1" opacity="0.6"/><circle cx="200" cy="70" r="1.3" opacity="0.7"/>'+
+        '<circle cx="280" cy="90" r="0.8" opacity="0.5"/><circle cx="350" cy="75" r="1" opacity="0.6"/><circle cx="18" cy="140" r="1" opacity="0.5"/>'+
+        '<circle cx="70" cy="170" r="1.5" opacity="0.7"/><circle cx="160" cy="130" r="0.8" opacity="0.5"/><circle cx="250" cy="150" r="1.2" opacity="0.6"/>'+
+        '<circle cx="330" cy="120" r="0.8" opacity="0.5"/><circle cx="390" cy="160" r="1" opacity="0.6"/><circle cx="100" cy="50" r="0.5" opacity="0.4"/>'+
+        '<circle cx="260" cy="30" r="0.6" opacity="0.4"/><circle cx="50" cy="110" r="0.5" opacity="0.4"/></g>'+
+        '<g transform="translate(310,155)"><circle cx="0" cy="0" r="28" fill="url(#planetG)"/>'+
+        '<ellipse cx="0" cy="0" rx="50" ry="10" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="3" transform="rotate(-15)"/>'+
+        '<ellipse cx="0" cy="0" rx="50" ry="10" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" transform="rotate(-15) scale(0.9)"/></g>'+
+        '<g transform="translate(50,185)"><circle cx="0" cy="0" r="12" fill="#90CAF9" opacity="0.7"/><circle cx="0" cy="0" r="8" fill="#E3F2FD" opacity="0.4"/>'+
+        '<circle cx="-3" cy="-2" r="3" fill="#BBDEFB" opacity="0.3"/></g>'+
+        '<line x1="380" y1="20" x2="350" y2="35" stroke="white" stroke-width="2" opacity="0.6" stroke-linecap="round"/>'+
+        '<line x1="380" y1="20" x2="375" y2="18" stroke="white" stroke-width="1" opacity="0.3"/>'+
+        '<circle cx="380" cy="20" r="1.5" fill="white" opacity="0.8"/>'+
+        '<line x1="260" y1="58" x2="230" y2="70" stroke="white" stroke-width="1.5" opacity="0.4"/>'+
+        '<circle cx="260" cy="58" r="1.2" fill="white" opacity="0.6"/></svg>',
+
+      garden: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260">'+
+        '<defs><linearGradient id="gs" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FCE4EC"/><stop offset="35%" stop-color="#F8BBD0"/><stop offset="65%" stop-color="#E8F5E9"/><stop offset="100%" stop-color="#81C784"/></linearGradient>'+
+        '<radialGradient id="gsun" cx="0.85" cy="0.2" r="0.25"><stop offset="0%" stop-color="#FFEE58" stop-opacity="0.5"/><stop offset="100%" stop-color="#FFEE58" stop-opacity="0"/></radialGradient></defs>'+
+        '<rect width="400" height="260" fill="url(#gs)"/><rect width="400" height="260" fill="url(#gsun)"/>'+
+        '<g transform="translate(60,195)"><line x1="0" y1="0" x2="0" y2="-35" stroke="#66BB6A" stroke-width="2.5"/>'+
+        '<circle cx="0" cy="-35" r="8" fill="#F44336"/><circle cx="0" cy="-35" r="4" fill="#FFEB3B"/>'+
+        '<ellipse cx="-6" cy="-33" rx="5" ry="4" fill="#EF5350" opacity="0.7"/><ellipse cx="6" cy="-33" rx="5" ry="4" fill="#EF5350" opacity="0.7"/>'+
+        '<ellipse cx="-3" cy="-39" rx="4" ry="3" fill="#E57373" opacity="0.7"/><ellipse cx="3" cy="-39" rx="4" ry="3" fill="#E57373" opacity="0.7"/></g>'+
+        '<g transform="translate(150,200)"><line x1="0" y1="0" x2="0" y2="-28" stroke="#66BB6A" stroke-width="2"/>'+
+        '<circle cx="0" cy="-28" r="7" fill="#E91E63"/><circle cx="0" cy="-28" r="3" fill="#FFEB3B"/>'+
+        '<ellipse cx="-5" cy="-26" rx="4" ry="3" fill="#EC407A" opacity="0.7"/><ellipse cx="5" cy="-26" rx="4" ry="3" fill="#EC407A" opacity="0.7"/>'+
+        '<ellipse cx="-3" cy="-31" rx="3" ry="2.5" fill="#F06292" opacity="0.7"/><ellipse cx="3" cy="-31" rx="3" ry="2.5" fill="#F06292" opacity="0.7"/></g>'+
+        '<g transform="translate(240,198)"><line x1="0" y1="0" x2="0" y2="-30" stroke="#66BB6A" stroke-width="2.5"/>'+
+        '<circle cx="0" cy="-30" r="7.5" fill="#FF5722"/><circle cx="0" cy="-30" r="3.5" fill="#FFEB3B"/>'+
+        '<ellipse cx="-6" cy="-28" rx="4.5" ry="3.5" fill="#FF7043" opacity="0.7"/><ellipse cx="6" cy="-28" rx="4.5" ry="3.5" fill="#FF7043" opacity="0.7"/>'+
+        '<ellipse cx="0" cy="-35" rx="4" ry="3" fill="#FF8A65" opacity="0.7"/></g>'+
+        '<g transform="translate(330,195)"><line x1="0" y1="0" x2="0" y2="-32" stroke="#66BB6A" stroke-width="2"/>'+
+        '<circle cx="0" cy="-32" r="7" fill="#9C27B0"/><circle cx="0" cy="-32" r="3" fill="#FFEB3B"/>'+
+        '<ellipse cx="-5" cy="-30" rx="4" ry="3.5" fill="#AB47BC" opacity="0.7"/><ellipse cx="5" cy="-30" rx="4" ry="3.5" fill="#AB47BC" opacity="0.7"/>'+
+        '<ellipse cx="-3" cy="-35" rx="3.5" ry="2.5" fill="#CE93D8" opacity="0.7"/><ellipse cx="3" cy="-35" rx="3.5" ry="2.5" fill="#CE93D8" opacity="0.7"/></g>'+
+        '<g transform="translate(30,210)"><ellipse cx="0" cy="0" rx="6" ry="3.5" fill="#F48FB1"/><ellipse cx="-4" cy="-3" rx="4" ry="2.5" fill="#F8BBD0" opacity="0.7"/><ellipse cx="4" cy="-3" rx="4" ry="2.5" fill="#F8BBD0" opacity="0.7"/></g>'+
+        '<g transform="translate(200,215)"><ellipse cx="0" cy="0" rx="5.5" ry="3" fill="#F48FB1"/><ellipse cx="-3.5" cy="-2.5" rx="3.5" ry="2" fill="#F8BBD0" opacity="0.7"/><ellipse cx="3.5" cy="-2.5" rx="3.5" ry="2" fill="#F8BBD0" opacity="0.7"/></g>'+
+        '<g transform="translate(370,212)"><ellipse cx="0" cy="0" rx="5" ry="3" fill="#F48FB1"/><ellipse cx="-3" cy="-2.5" rx="3.5" ry="2" fill="#F8BBD0" opacity="0.7"/><ellipse cx="3" cy="-2.5" rx="3.5" ry="2" fill="#F8BBD0" opacity="0.7"/></g>'+
+        '<g transform="translate(85,45)" fill="none" stroke="#FF8A65" stroke-width="1.5" opacity="0.6">'+
+        '<path d="M0,0 Q4,-6 8,0 Q12,-6 16,0"/><line x1="-3" y1="0" x2="0" y2="0"/><line x1="16" y1="0" x2="19" y2="0"/></g>'+
+        '<g transform="translate(310,55)" fill="none" stroke="#CE93D8" stroke-width="1.5" opacity="0.6">'+
+        '<path d="M0,0 Q4,-6 8,0 Q12,-6 16,0"/><line x1="-3" y1="0" x2="0" y2="0"/><line x1="16" y1="0" x2="19" y2="0"/></g>'+
+        '<ellipse cx="200" cy="250" rx="250" ry="25" fill="#66BB6A" opacity="0.4"/>'+
+        '<g stroke="#81C784" stroke-width="1.5" opacity="0.6"><line x1="20" y1="245" x2="18" y2="232"/>'+
+        '<line x1="100" y1="248" x2="103" y2="235"/><line x1="280" y1="246" x2="278" y2="233"/><line x1="360" y1="248" x2="363" y2="236"/></g></svg>',
+
+      dream: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260">'+
+        '<defs><linearGradient id="ds" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1A0A2E"/><stop offset="35%" stop-color="#2D1B69"/><stop offset="65%" stop-color="#4A148C"/><stop offset="100%" stop-color="#7B1FA2"/></linearGradient>'+
+        '<radialGradient id="dneb" cx="0.6" cy="0.5" r="0.6"><stop offset="0%" stop-color="#E040FB" stop-opacity="0.25"/><stop offset="100%" stop-color="#E040FB" stop-opacity="0"/></radialGradient>'+
+        '<radialGradient id="dglow" cx="0.5" cy="0.5" r="0.5"><stop offset="0%" stop-color="#FFF9C4" stop-opacity="0.15"/><stop offset="100%" stop-color="#FFF9C4" stop-opacity="0"/></radialGradient></defs>'+
+        '<rect width="400" height="260" fill="url(#ds)"/>'+
+        '<rect width="400" height="260" fill="url(#dneb)"/><rect width="400" height="260" fill="url(#dglow)"/>'+
+        '<g fill="white">'+
+        '<circle cx="30" cy="25" r="1.5" opacity="0.9"/><circle cx="80" cy="50" r="1" opacity="0.7"/><circle cx="140" cy="30" r="1.2" opacity="0.8"/>'+
+        '<circle cx="200" cy="55" r="0.8" opacity="0.5"/><circle cx="270" cy="20" r="1.5" opacity="0.8"/><circle cx="330" cy="45" r="1" opacity="0.6"/>'+
+        '<circle cx="370" cy="28" r="1.3" opacity="0.7"/><circle cx="55" cy="90" r="0.8" opacity="0.5"/><circle cx="120" cy="110" r="1.2" opacity="0.7"/>'+
+        '<circle cx="250" cy="100" r="0.8" opacity="0.5"/><circle cx="310" cy="85" r="1" opacity="0.6"/><circle cx="380" cy="100" r="0.8" opacity="0.5"/>'+
+        '<circle cx="90" cy="35" r="0.5" opacity="0.4"/><circle cx="220" cy="38" r="0.6" opacity="0.4"/><circle cx="350" cy="65" r="0.5" opacity="0.4"/>'+
+        '<circle cx="170" cy="80" r="0.6" opacity="0.3"/></g>'+
+        '<g transform="translate(300,65)"><path d="M0,-25 Q12,-25 12,-10 Q12,0 0,0 Q-12,0 -12,-10 Q-12,-25 0,-25Z" fill="#FFF9C4" opacity="0.9"/>'+
+        '<circle cx="-5" cy="-15" r="18" fill="#1A0A2E" opacity="0.85"/></g>'+
+        '<g opacity="0.4"><ellipse cx="60" cy="130" rx="35" ry="14" fill="#E1BEE7"/><ellipse cx="70" cy="125" rx="28" ry="10" fill="#CE93D8"/>'+
+        '<ellipse cx="50" cy="128" rx="20" ry="8" fill="#BA68C8"/></g>'+
+        '<g opacity="0.35"><ellipse cx="340" cy="150" rx="28" ry="12" fill="#E1BEE7"/><ellipse cx="348" cy="146" rx="22" ry="8" fill="#CE93D8"/>'+
+        '<ellipse cx="332" cy="148" rx="16" ry="6" fill="#BA68C8"/></g>'+
+        '<g opacity="0.3"><ellipse cx="200" cy="140" rx="40" ry="15" fill="#E1BEE7"/><ellipse cx="212" cy="135" rx="32" ry="11" fill="#CE93D8"/>'+
+        '<ellipse cx="188" cy="138" rx="24" ry="9" fill="#BA68C8"/></g>'+
+        '<g transform="translate(60,195)"><polygon points="0,-22 10,-8 22,-12 12,2 22,16 10,10 0,24 -10,10 -22,16 -12,2 -22,-12 -10,-8" fill="#B39DDB" opacity="0.6"/>'+
+        '<polygon points="0,-14 6,-5 14,-7 8,2 14,10 6,7 0,15 -6,7 -14,10 -8,2 -14,-7 -6,-5" fill="#D1C4E9" opacity="0.4"/></g>'+
+        '<g transform="translate(340,210)"><polygon points="0,-18 8,-6 18,-10 10,2 18,13 8,8 0,20 -8,8 -18,13 -10,2 -18,-10 -8,-6" fill="#B39DDB" opacity="0.5"/>'+
+        '<polygon points="0,-11 5,-4 11,-6 6,2 11,8 5,5 0,12 -5,5 -11,8 -6,2 -11,-6 -5,-4" fill="#D1C4E9" opacity="0.35"/></g>'+
+        '<g fill="#FFF9C4" opacity="0.35"><circle cx="20" cy="230" r="2"/><circle cx="35" cy="238" r="1.5"/><circle cx="150" cy="235" r="2"/><circle cx="280" cy="232" r="1.5"/><circle cx="380" cy="238" r="2"/></g></svg>'
+    };
+    var svg = svgs[pid];
+    if(!svg) return 'background:var(--surface)';
+    return 'background:linear-gradient(rgba(255,255,255,0.35),rgba(255,255,255,0.35)),url("data:image/svg+xml,'+encodeURIComponent(svg)+'") center/cover';
   }
 
   // === SHOP ===
@@ -245,6 +708,12 @@ body{
 
   function normalColors(){
     var skin = state.aSkin || 'default';
+    var pt = planetTheme(cPlanet);
+    // Planet theme overrides skin colors for normal/generic bubbles
+    if(pt && skin==='default'){
+      var cols = pt.colors;
+      return cols[Math.floor(Math.random()*cols.length)];
+    }
     var cols = SKIN_COLORS[skin] || SKIN_COLORS['default'];
     return cols[Math.floor(Math.random()*cols.length)];
   }
@@ -278,11 +747,14 @@ body{
       var prog = state.planetP[p.id]||0;
       var pct = Math.round((prog/p.n)*100);
       var stars = countStars(p.id);
-      h += '<div class="planet-card'+(ul?'':' locked')+'"'+(ul?' onclick="App.selectPlanet(\''+p.id+'\')"':'')+' style="'+(!ul?'':'border-color:'+p.clr)+'">';
-      h += '<div style="font-size:28px;margin-bottom:6px">'+p.icon+'</div>';
+      var pt = planetTheme(p.id);
+      var bgCss = cardBgCss(p.id);
+      var fgClr = p.clr;
+      h += '<div class="planet-card'+(ul?'':' locked')+'"'+(ul?' onclick="App.selectPlanet(\''+p.id+'\')"':'')+' style="'+bgCss+';border-color:'+fgClr+'">';
+      h += '<div style="font-size:32px;margin-bottom:6px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.1))">'+p.icon+'</div>';
       h += '<div class="planet-name">'+p.name+'星球</div>';
       h += '<div class="planet-desc">'+p.desc+'</div>';
-      h += '<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%;background:'+p.clr+'"></div></div>';
+      h += '<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%;background:'+fgClr+'"></div></div>';
       h += '<div class="planet-stats">'+prog+'/'+p.n+' 关 · '+(stars?starStr(stars):'未开始')+'</div>';
       h += '</div>';
     }
@@ -302,11 +774,13 @@ body{
     cPlanet = pid;
     var p = PLANETS.find(function(x){return x.id===pid});
     if(!p) return;
+    var pt = planetTheme(pid);
     var ll = document.getElementById('levelList');
     if(!ll) return;
     var prog = state.planetP[pid]||0;
-    var h = '<div style="margin-top:16px;padding:16px;background:var(--surface);border-radius:16px;border:1px solid var(--border)">';
-    h += '<h3 style="font-size:15px;font-weight:600;margin-bottom:12px">'+p.name+'星球 - 选择关卡</h3>';
+    var bgCss = cardBgCss(pid);
+    var h = '<div style="margin-top:16px;padding:16px;border-radius:16px;'+bgCss+';border:1px solid '+p.clr+'">';
+    h += '<h3 style="font-size:15px;font-weight:600;margin-bottom:12px">'+p.icon+' '+p.name+'星球 - 选择关卡</h3>';
     h += '<div class="level-grid">';
     for(var lv=1;lv<=p.n;lv++){
       var key = lKey(pid,lv);
@@ -324,8 +798,9 @@ body{
   function genGoals(pid,ln){
     var gs = [{type:'pops',target:Math.floor(15+ln*3+Math.random()*5),desc:''}];
     gs[0].desc = '戳爆 '+gs[0].target+' 个泡泡';
-    if(ln>=3) gs.push({type:'combo',target:Math.min(Math.floor(3+ln*0.8),20),desc:'达到 x'+Math.min(Math.floor(3+ln*0.8),20)+' 连击'});
-    if(ln>=5) gs.push({type:'music',target:Math.floor(2+ln*0.4),desc:'找到 '+Math.floor(2+ln*0.4)+' 个音乐泡'});
+    // Combo from level 1 — easy entry (×3), scales with level
+    gs.push({type:'combo',target:Math.min(Math.floor(3+ln*0.7),20),desc:'达到 x'+Math.min(Math.floor(3+ln*0.7),20)+' 连击'});
+    if(ln>=3) gs.push({type:'music',target:Math.floor(2+ln*0.4),desc:'找到 '+Math.floor(2+ln*0.4)+' 个音乐泡'});
     if(ln>=6) gs.push({type:'trapfree',target:1,desc:'别碰陷阱泡'});
     return gs;
   }
@@ -349,7 +824,9 @@ body{
     var th = document.getElementById('tapHint');
     if(th){
       th.classList.remove('fade');
-      th.innerHTML = cLevel>=4?'戳泡泡得分<br><span style="font-size:13px;color:#c83030;display:block;margin-top:4px">⚠️ 带刺的是陷阱!</span>':'戳一戳试试<br><span style="font-size:24px;display:block;margin-top:4px">🫧</span>';
+      var pt = planetTheme(pid);
+      var pIcon = pt?pt.icon:'🫧';
+      th.innerHTML = cLevel>=4?'戳泡泡得分<br><span style="font-size:13px;color:#c83030;display:block;margin-top:4px">⚠️ 带刺的是陷阱!</span>':'戳一戳试试<br><span style="font-size:24px;display:block;margin-top:4px">'+pIcon+'</span>';
     }
 
     updHUD(); updGoal();
@@ -387,13 +864,29 @@ body{
 
   function bType(){
     var r=Math.random();
+    var hasMusicGoal = false;
+    for(var i=0;i<goals.length;i++){ if(goals[i].type==='music'){ hasMusicGoal=true; break; } }
     if(cLevel>=4&&r<0.12) return 'trap';
     if(r<0.55) return 'normal';
     if(r<0.63) return 'rainbow';
     if(r<0.68) return 'giant';
-    if(r<0.78) return 'music';
-    if(r<0.86) return 'ice';
-    return 'stress';
+    if(hasMusicGoal){
+      // Boosted: music 22%, ice 5%, stress 5%
+      if(r<0.90) return 'music';
+      if(r<0.95) return 'ice';
+      return 'stress';
+    } else {
+      if(r<0.78) return 'music';
+      if(r<0.86) return 'ice';
+      return 'stress';
+    }
+  }
+
+  function randomPrint(){
+    var pt = planetTheme(cPlanet);
+    if(!pt||!pt.prints) return null;
+    var prints = pt.prints;
+    return prints[Math.floor(Math.random()*prints.length)];
   }
 
   function spawnB(x,y,to){
@@ -417,7 +910,8 @@ body{
       id:bid++, type:type, x:px, y:py, radius:radius,
       vx:(Math.random()-0.5)*0.5, vy:(Math.random()-0.5)*0.3-0.12,
       colors:cols, phase:Math.random()*Math.PI*2, wobA:0.3+Math.random()*0.8, wobS:0.01+Math.random()*0.02,
-      opacity:1, scale:1
+      opacity:1, scale:1,
+      print: (type==='normal'?randomPrint():null)
     });
   }
 
@@ -441,19 +935,23 @@ body{
     el.addEventListener('animationend',function(){ el.remove(); });
   }
 
+  function fmtCompact(n){
+    if(n>=1e6) return (n/1e6).toFixed(1)+'M';
+    if(n>=1e3) return (n/1e3).toFixed(1).replace(/\.0$/,'')+'K';
+    return ''+n;
+  }
+
   function updHUD(){
     var s = document.getElementById('hudScore');
     var p = document.getElementById('hudPops');
     var lv = document.getElementById('hudLives');
-    var ll = document.getElementById('livesLabel');
-    if(s) s.textContent = score;
-    if(p) p.textContent = pops;
-    if(lv){
+    if(s) s.textContent = fmtCompact(score);
+    if(p) p.textContent = fmtCompact(pops);
+    if(lv && cLevel>=4){
       var hearts = '';
       for(var i=0;i<maxLives;i++) hearts += i<lives?'❤️':'🖤';
       lv.textContent = hearts;
-      if(ll) ll.textContent = cLevel>=4?'💀 生命':'';
-      if(lives<=1) lv.style.animation='none; color:#c83030';
+      lv.style.color = lives<=1?'#c83030':'';
     }
   }
 
@@ -461,7 +959,8 @@ body{
     var g = goals[0];
     var gt = document.getElementById('goalText');
     var gf = document.getElementById('goalFill');
-    if(!g){ if(gt)gt.textContent=''; if(gf)gf.style.width='0%'; return; }
+    var gs = document.getElementById('goalSubs');
+    if(!g){ if(gt)gt.textContent=''; if(gf)gf.style.width='0%'; if(gs)gs.innerHTML=''; return; }
     var cur=0;
     if(g.type==='pops') cur=pops;
     else if(g.type==='combo') cur=comboMax;
@@ -470,16 +969,32 @@ body{
     var pct = Math.min(Math.round((cur/g.target)*100),100);
     if(gt) gt.innerHTML = g.desc + ' <span style="font-size:10px">'+(cur>=g.target?'✅':cur+'/'+g.target)+'</span>';
     if(gf){ gf.style.width=pct+'%'; gf.style.background=cur>=g.target?'#639922':'#378add'; }
+    // Show sub-goals as compact tags
+    if(gs){
+      var html='';
+      for(var i=1;i<goals.length;i++){
+        var sg=goals[i], sc=0;
+        if(sg.type==='combo') sc=comboMax;
+        else if(sg.type==='music') sc=musicPop;
+        else if(sg.type==='trapfree') sc=lives>=maxLives?1:0;
+        var met=sc>=sg.target;
+        html+='<span class="hud-stag'+(met?' met':'')+'">'+sg.desc+'</span>';
+      }
+      gs.innerHTML=html;
+    }
   }
 
   function checkDone(){
-    var g = goals[0];
-    if(!g) return;
-    var done=false;
-    if(g.type==='pops') done=pops>=g.target;
-    else if(g.type==='combo') done=comboMax>=g.target;
-    else if(g.type==='music') done=musicPop>=g.target;
-    if(done) showSettle();
+    // All required goals must be met. trapfree is optional (bonus star only).
+    var allDone=true;
+    for(var i=0;i<goals.length;i++){
+      var g=goals[i];
+      if(g.type==='trapfree') continue; // bonus star, doesn't block completion
+      if(g.type==='pops'&&pops<g.target) allDone=false;
+      else if(g.type==='combo'&&comboMax<g.target) allDone=false;
+      else if(g.type==='music'&&musicPop<g.target) allDone=false;
+    }
+    if(allDone) showSettle();
   }
 
   function calcStars(){
@@ -496,10 +1011,10 @@ body{
 
   function showSettle(){
     if(leaving) return;
-    var stars = calcStars();
-    var reward = stars*5;
+    var rawStars = calcStars();
+    var reward = rawStars*5; // reward based on actual stars earned
     var key = lKey(cPlanet,cLevel);
-    if(stars>(state.lStars[key]||0)) state.lStars[key]=stars;
+    if(rawStars>(state.lStars[key]||0)) state.lStars[key]=rawStars;
     var p = PLANETS.find(function(x){return x.id===cPlanet});
     if(cLevel>=(state.planetP[cPlanet]||0)) state.planetP[cPlanet]=cLevel;
     state.tpops += pops;
@@ -512,7 +1027,8 @@ body{
     var card = document.getElementById('settleCard');
     if(!card) return;
     var ss='';
-    for(var i=0;i<3;i++) ss += i<stars?'⭐':'☆';
+    var maxStars = goals.length;
+    for(var i=0;i<maxStars;i++) ss += i<rawStars?'⭐':'☆';
     var lines = '';
     for(var j=0;j<goals.length;j++){
       var g=goals[j], cur=0;
@@ -522,12 +1038,14 @@ body{
       else if(g.type==='trapfree') cur=lives>=maxLives?1:0;
       lines += (cur>=g.target?'✅ ':'❌ ')+g.desc+'<br>';
     }
+    // Show reward as ⭐ ×N for clarity
+    var rewardStr = '⭐<span style="font-size:18px">×</span>'+reward;
     var hasNext = cLevel < p.n;
     card.innerHTML = '<div class="settle-stars">'+ss+'</div>'+
-      '<div class="settle-title">'+(stars===3?'完美通关！':stars===2?'不错！':'通关成功')+'</div>'+
+      '<div class="settle-title">'+(rawStars>=goals.length?'完美通关！':rawStars>=goals.length-1?'不错！':'通关成功')+'</div>'+
       '<div class="settle-sub">'+p.name+'星球 第'+cLevel+'关</div>'+
-      '<div class="settle-stats"><div class="settle-stat"><div class="val">'+score+'</div><div class="lbl">分数</div></div><div class="settle-stat"><div class="val">x'+comboMax+'</div><div class="lbl">最高连击</div></div><div class="settle-stat"><div class="val">+'+reward+'</div><div class="lbl">获得星星</div></div></div>'+
-      '<div style="font-size:12px;color:var(--muted);margin-bottom:16px">'+lines+'</div>'+
+      '<div class="settle-stats"><div class="settle-stat"><div class="val">'+score+'</div><div class="lbl">分数</div></div><div class="settle-stat"><div class="val">x'+comboMax+'</div><div class="lbl">最高连击</div></div><div class="settle-stat"><div class="val">'+rewardStr+'</div><div class="lbl">获得奖励</div></div></div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.8">'+lines+'</div>'+
       '<div class="settle-btns">'+(hasNext?'<button class="btn btn-primary" onclick="App.nextLevel()">下一关</button>':'')+'<button class="btn btn-secondary" onclick="App.backToMap()">返回地图</button></div>';
     document.getElementById('settleOverlay').classList.add('on');
   }
@@ -588,7 +1106,7 @@ body{
     }
 
     var now = Date.now();
-    if(now-lastPop<1500) combo++; else combo=1;
+    if(now-lastPop<2000) combo++; else combo=1;
     comboT=1.2; lastPop=now;
     if(combo>comboMax) comboMax=combo;
     var scores={normal:10,rainbow:50,giant:100,music:30,ice:15,stress:20};
@@ -800,6 +1318,18 @@ body{
         ctx.textAlign='center'; ctx.textBaseline='middle';
         ctx.fillText('⚠',0,1);
       }
+
+      // Planet print - fill the bubble
+      if(b.print && b.type==='normal' && state.aSkin==='default'){
+        ctx.fillStyle = 'rgba(0,0,0,0.06)';
+        ctx.beginPath(); ctx.arc(0,0,r*0.65,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = b.colors.s.replace(/[\d.]+\)$/, '0.65)');
+        ctx.font = (r*0.9)+'px system-ui';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(b.print, 0, r*0.02);
+      }
+
       ctx.beginPath(); ctx.arc(-r*0.3,-r*0.35,r*0.15,0,Math.PI*2); ctx.fillStyle=b.colors.h; ctx.fill();
       ctx.beginPath(); ctx.arc(-r*0.15,-r*0.25,r*0.06,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.65)'; ctx.fill();
       ctx.restore();
@@ -931,6 +1461,14 @@ body{
   // === STARTUP ===
   renderMap();
   updRes();
+
+  // Rules toggle
+  document.getElementById('rulesToggle').addEventListener('click',function(){
+    var body = document.getElementById('rulesBody');
+    var arrow = document.getElementById('rulesArrow');
+    var open = body.classList.toggle('open');
+    if(arrow) arrow.classList.toggle('open',open);
+  });
 
 })();
 </script>
